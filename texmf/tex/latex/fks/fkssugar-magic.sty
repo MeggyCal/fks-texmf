@@ -1,0 +1,44 @@
+\AtBeginDocument{
+% breaking relations according Czech/Russian typography rules (repeat the relation sign)
+\dief\neq {\mathrel{\not=}} % no break @ \neq
+\begingroup\lccode`~=`\=\lowercase{\endgroup\newcommand~}{\math@eq\discretionary{}{=}{}}
+\mathchardef\math@eq=\mathcode`\=
+\mathcode`\=="8000      % activize the = character
+
+%TODO zbytek relaci
+
+\binoppenalty=10000     % other breaking forbidden
+\relpenalty=10000     % nikde jinde se relace lamat nesmeji
+
+% * = \cdot
+\bgroup\uccode`~=`*\uppercase{\egroup\let~}\cdot
+\mathcode`\*="8000
+\def\E #1 {\cdot 10^{#1}}                       % mocnina desitky, to take whole numeric token
+
+% the double quote macro for writing numbers with units ($ G = "6.672e-11 N.m^2.kg^{-2}" $)
+\begingroup\uccode`~=`e\uppercase{\endgroup\let~}\E   % e = \E in ""
+\mathchardef\mathquote=\mathcode`\" % ordinary double quote
+%\jed@A takes arguments until first whitespace occurs (so it processes the number)
+\def\jed@A #1 {\begingroup\def~{\,}%thousands are separated by thin space
+\mathcode`\.="013B\mathcode`\,="013B %both dot and comma are translated to comma (decimal point)
+\begingroup \mathcode`\e="8000 % e becomes active until we start processing the unit
+#1 \jed@B}%insert the number and proceed to \jed@B
+%\jed@B takes the rest (so the units)
+\def\jed@B #1@@{\endgroup\if @#1@%if there is only number in "" (so if #1 is empty or begins with @, which can't be), do nothing
+\else\,\mathcode`\.="0201 %the dot is \cdot without spacing
+\mathup{#1}\fi\endgroup} %write the unit in latin
+%double quotes do the magic above
+\begingroup\uccode`~=`"\uppercase{\endgroup\def~}#1"{\jed@A #1 @@}%" is a macro which takes argument until first (unactive) " occurs
+\mathcode`\"="8000 %" becomes active
+
+\newcommand\my@jd[1]{\begingroup\begingroup\!\jed@B#1@@}
+\newcommand\jd[1]{\ensuremath{\my@jd{#1}}} % pro psani samostatnych jednotek (napr. $\jd{m.s^{-1}}$)
+
+\@ifpackageloaded{babel}{%
+  \PackageWarning{fkssugar}{Package babel detected, its macros with active double quote " will be disabled.}
+% -- Uncomment if you need to use standard babel double quote macros --
+%  \begingroup\uccode`~=`*\uppercase{\endgroup\def~}#1*{\jed@A #1 @@}
+%  \mathcode`\*="8000
+  \catcode`\"=12 %" in ordinary text is inactive
+}{%
+}}
